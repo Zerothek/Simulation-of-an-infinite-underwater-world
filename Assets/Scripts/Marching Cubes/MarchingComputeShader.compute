@@ -1,0 +1,175 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel MarchingCube
+#include "/Include/IncludeMarching.compute"
+
+
+struct Triangle {
+    float3 vertex1;
+    float3 vertex2;
+    float3 vertex3;
+};
+
+RWStructuredBuffer<float> terrainMap;
+AppendStructuredBuffer<Triangle> triangles;
+
+int height;
+int width;
+float terrainSurface;
+
+int3 start_pos;
+
+int3 cornerTable[8] =
+{
+    int3(0, 0, 0),
+    int3(1, 0, 0),
+    int3(1, 1, 0),
+    int3(0, 1, 0),
+    int3(0, 0, 1),
+    int3(1, 0, 1),
+    int3(1, 1, 1),
+    int3(0, 1, 1)
+};
+
+int GetCubeConfiguration(float cube[8])
+{
+    int configurationIndex = 0;
+
+    int shift = 1;
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (cube[i] > terrainSurface)
+        {
+            configurationIndex |= shift;
+        }
+        shift *= 2;
+    }
+
+    return configurationIndex;
+}
+
+float SampleTerrain(int3 pt)
+{
+    return terrainMap[pt.x * (height + 1) * (width + 1) + pt.y * (height + 1) + pt.z];   
+}
+
+float3 helper(float3 position, int mux) {
+    float3 res = position;
+
+    if (mux == 0)
+        return position;
+    else if (mux == 1) {
+        res.x = position.x + 1;
+        res.y = position.y;
+        res.z = position.z;
+    }
+    else if (mux == 2) {
+        res.x = position.x + 1;
+        res.y = position.y + 1;
+        res.z = position.z;
+    }
+    else if (mux == 3) {
+        res.x = position.x;
+        res.y = position.y + 1;
+        res.z = position.z;
+    }
+    else if (mux == 4) {
+        res.x = position.x;
+        res.y = position.y;
+        res.z = position.z + 1;
+    }
+    else if (mux == 5) {
+        res.x = position.x + 1;
+        res.y = position.y;
+        res.z = position.z + 1;
+    }
+    else if (mux == 6) {
+        res.x = position.x + 1;
+        res.y = position.y + 1;
+        res.z = position.z + 1;
+    }
+    else if (mux == 7) {
+        res.x = position.x;
+        res.y = position.y + 1;
+        res.z = position.z + 1;
+    }
+
+    return res;
+}
+
+[numthreads(8,8,8)]
+
+void MarchingCube(int3 id : SV_DispatchThreadID)
+{
+    // Get current starting position of cube
+    int3 position = id + start_pos;
+    float cube[8];
+
+    // Get the cube values at the specified position
+    cube[0] = terrainMap[id.x * (height + 1) * (width + 1) + id.y * (height + 1) + id.z];
+    cube[1] = terrainMap[(id.x + 1) * (height + 1) * (width + 1) + id.y * (height + 1) + id.z];
+    cube[2] = terrainMap[(id.x + 1) * (height + 1) * (width + 1) + (id.y + 1) * (height + 1) + id.z];
+    cube[3] = terrainMap[(id.x) * (height + 1) * (width + 1) + (id.y + 1) * (height + 1) + id.z];
+    cube[4] = terrainMap[id.x * (height + 1) * (width + 1) + id.y * (height + 1) + (id.z + 1)];
+    cube[5] = terrainMap[(id.x + 1) * (height + 1) * (width + 1) + id.y * (height + 1) + (id.z + 1)];
+    cube[6] = terrainMap[(id.x + 1) * (height + 1) * (width + 1) + (id.y + 1) * (height + 1) + (id.z + 1)];
+    cube[7] = terrainMap[(id.x) * (height + 1) * (width + 1) + (id.y + 1) * (height + 1) + (id.z + 1)];
+
+    // Get the cube's configuration
+    int config_index = GetCubeConfiguration(cube);
+
+    // The configurations with all corners inside or outside of the shape are irrelevant
+    if (config_index == 0 || config_index == 255)
+    {
+        return;
+    }
+
+
+    int edgeIndex = 0;
+    for (int t = 0; t < 5; t++)
+    {
+        Triangle triangle_vertices;
+        for (int p = 0; p < 3; p++)
+        {
+            int ind = triangleTable[config_index][edgeIndex];
+
+            if (ind == -1)
+            {
+                return;
+            }
+
+            float3 vert1 = position + cornerTable[edgeTable[ind][0]];
+            float3 vert2 = position + cornerTable[edgeTable[ind][1]];
+
+            vert1 = helper(position, edgeTable[ind][0]);
+            vert2 = helper(position, edgeTable[ind][1]);
+
+            float vert1Sample = cube[edgeTable[ind][0]];
+            float vert2Sample = cube[edgeTable[ind][1]];
+
+            float difference = vert2Sample - vert1Sample;
+            float percentage = 0;
+
+            if (difference != 0)
+            {
+                percentage = (terrainSurface - vert1Sample) / difference;
+            }
+
+            float3 vertPosition = vert1 + ((vert2 - vert1) * percentage);
+
+            edgeIndex++;
+            if (p == 0) {
+                triangle_vertices.vertex1 = vertPosition;
+            } 
+            else if (p == 1) {
+                triangle_vertices.vertex2 = vertPosition;
+            }
+            else {
+                triangle_vertices.vertex3 = vertPosition;
+            }
+        }
+
+        // Add the three vertices that form a triangle at once to the triangle list
+        triangles.Append(triangle_vertices);
+    }
+}

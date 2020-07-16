@@ -1,0 +1,29 @@
+Base path: 'C:/Program Files/Unity/Hub/Editor/2019.3.13f1/Editor/Data', plugins path 'C:/Program Files/Unity/Hub/Editor/2019.3.13f1/Editor/Data/PlaybackEngines'
+Cmd: initializeCompiler
+Cmd: preprocessCompute
+  insize=5313 outsize=5312 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at MarchingComputeShader.compute(98): use of potentially uninitialized variable (helper)
+  error: 1 plat 4 at MarchingComputeShader.compute(127): 'i': loop control variable conflicts with a previous declaration in the outer scope; most recent declaration will be used
+  api=4 insize=5312 outsize=70861 ok=1
+Cmd: preprocessCompute
+  insize=5307 outsize=5306 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at MarchingComputeShader.compute(98): use of potentially uninitialized variable (helper)
+  error: 1 plat 4 at MarchingComputeShader.compute(126): 'i': loop control variable conflicts with a previous declaration in the outer scope; most recent declaration will be used
+  api=4 insize=5306 outsize=70162 ok=1
+Cmd: preprocessCompute
+  insize=5176 outsize=5175 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at MarchingComputeShader.compute(98): use of potentially uninitialized variable (helper)
+  api=4 insize=5175 outsize=70162 ok=1
+Cmd: preprocessCompute
+  insize=5152 outsize=5151 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at MarchingComputeShader.compute(98): use of potentially uninitialized variable (helper)
+  api=4 insize=5151 outsize=70162 ok=1
+Cmd: preprocessCompute
+  insize=4844 outsize=4843 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at MarchingComputeShader.compute(95): use of potentially uninitialized variable (helper)
+  api=4 insize=4843 outsize=70162 ok=1
